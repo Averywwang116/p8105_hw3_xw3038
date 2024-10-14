@@ -193,7 +193,7 @@ aggregated_data |>ggplot(aes(x=age,y=total,color=sex))+
   #add title 
   labs(title = "Total Activity by Different Age, Sex and Education Level",
        x = "age ",
-       y = "total activity ") 
+       y = "total activity ") +  theme_minimal()
 ```
 
 It is observed from the plot that for both male and female, the age gets older, the total activity time gets smaller. No matter which education level female and male groups have, it all shows the highest total activity before the age of 60, probably because people before that age maintain better health condition and energy. For the education level less than high school, male group tends to have more total activity, and the peak total activity falls between age 40 to 60 for both groups. And for the other two categories, female group tends to have more total activity. 
