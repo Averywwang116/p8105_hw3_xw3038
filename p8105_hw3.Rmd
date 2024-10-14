@@ -110,11 +110,41 @@ ridge =
   cleaned_noaa |>
   filter(snow < 100 & snow > 0) |>
   ggplot(aes(x = snow, y = as.factor(year))) + 
-  geom_density_ridges()
+  geom_density_ridges()+
+  labs(y = "Year")
 
 hex + ridge
 ```
 
-From the hex plot it is seen that the majority of the data locates near the center of the plot, and in most cases tmax is larger than tmin, but in some cases tmin is bigger. And for the ridge plot, majority of the stations see between 0 and 35 mm of snow in a year, and some groups show the snowfall around 50 mm and 80 mm.
+From the hex plot it is seen that the majority of the data locates near the center of the plot, and in most cases tmax is larger than tmin, but in some cases tmin is bigger. And for the ridge plot, the peak at 0 snowfall appears consistent, and there are also varying smaller peaks across other snowfall amounts like 20, 40, and beyond, reflecting how snow events of different sizes occurred across the years.
 
 ## Problem 2
+load the data and drop the missing value for the demographic dataset
+```{r}
+#drop the missing demographic dat
+demographic_data=read_csv(file = "./data/nhanes_covar.csv", na = c(".", "NA", ""),skip=4) |>
+  janitor::clean_names() |> drop_na()
+
+accelerometer_data = read_csv(file="./data/nhanes_accel.csv", na = c(".", "NA", "")) |>
+  janitor::clean_names()
+
+```
+
+Merged the data set using left join on demographic data 
+```{r}
+merged_data=left_join(demographic_data,accelerometer_data, by="seqn")
+```
+
+
+clean the joined dataset by filtering out age under 21, encode the sex and education case
+```{r}
+cleaned_merged_data= merged_data|> filter(age>=21) |>
+  mutate(
+    sex = factor(sex, levels = c(1, 2), labels = c("male", "female")),
+    education = factor(education, levels = c(1, 2, 3), labels = c("Less than high school", 
+                                  "High school equivalent", "More than high school"))
+  ) 
+```
+
+
+
