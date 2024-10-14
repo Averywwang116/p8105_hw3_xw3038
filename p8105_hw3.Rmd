@@ -12,15 +12,6 @@ library(tidyverse)
 library(ggridges)
 library(p8105.datasets)
 library(patchwork)
-knitr::opts_chunk$set(
-	echo = TRUE,
-	warning = FALSE,
-	fig.width = 8,
-  fig.height = 6,
-  out.width = "90%"
-)
-
-theme_set(theme_minimal() + theme(legend.position = "bottom"))
 
 options(
   ggplot2.continuous.colour = "viridis",
@@ -96,7 +87,7 @@ filtered_data |> ggplot(aes(x = year, y = avg_max,color = id)) +
     #show x and y axis 
     x = "Year",
     y = "Average Max Temperature (°C)"
-  ) 
+  ) +theme_minimal()
 ```
 
 The average max temperature is much higher in July than in January which is normal for the summer season and the winter season in NY. And it seems that the average max temperature falls in similar range for different years. There are some outliers in the plot such as the observation of extremely low temperature in January, 1982. It also shows the outlier during January in 1996. And in the year 1987 and month July, it is also observed a cold station, with is much lower than the temperatures in the other stations
@@ -130,7 +121,7 @@ accelerometer_data = read_csv(file="./data/nhanes_accel.csv", na = c(".", "NA", 
 
 ```
 
-Merged the data set using left join on demographic data 
+Merged the data set using left join on the same variable `seqn` value.
 ```{r}
 merged_data=left_join(demographic_data,accelerometer_data, by="seqn")
 ```
@@ -141,10 +132,118 @@ clean the joined dataset by filtering out age under 21, encode the sex and educa
 cleaned_merged_data= merged_data|> filter(age>=21) |>
   mutate(
     sex = factor(sex, levels = c(1, 2), labels = c("male", "female")),
-    education = factor(education, levels = c(1, 2, 3), labels = c("Less than high school", 
+    education = factor(education, levels = c(1, 2, 3), 
+                       labels = c("Less than high school", 
                                   "High school equivalent", "More than high school"))
   ) 
 ```
+
+The new datasets now include `r nrow(cleaned_merged_data)` rows and `r ncol(cleaned_merged_data)` columns, with all the variables from the demographic and accelerometer data such as `seqn`, `sex`, `age`, `bmi`, `education` and the `*MIMS` values for each minutes of a 24-hour day.
+
+* Provide a user-friendly table for the number of men and women in each education category
+
+```{r}
+#group by education and size
+table_education_sex= cleaned_merged_data |> 
+  group_by( education,sex) |>
+  summarize(count=n()) |> 
+  #pivot_wider to make more user friendly
+  pivot_wider(names_from = sex,values_from = count) |>
+  #create the table 
+  knitr::kable(align = 'c')
+ 
+table_education_sex
+
+```
+
+```{r}
+#plot the age distribution using boxplot 
+cleaned_merged_data |> ggplot(aes(x=education,y=age,fill=sex))+geom_boxplot(alpha = .5)+
+  labs(
+    title = "Age distribution for different education category",
+    x = "education",
+    y = "age",
+    color = "sex",
+   )  +theme_minimal()
+```
+From the table and the plot , it shows that for the category "less than high school" and "More than high school ", women and men shows about the similar count. And there are more males than females with education levels "equivalent to high school." 
+
+* Aggregate across minutes to create a total activity variable for each participant
+
+```{r}
+#used for slicing
+end_col=ncol(cleaned_merged_data)
+aggregated_data=cleaned_merged_data |> 
+  #aggregate by selecting all columns starting with min and name it total
+  mutate(total=rowSums(cleaned_merged_data[6:end_col]))|>
+  select(seqn:education,total)
+```
+
+
+* Plot these total activities (y-axis) against age (x-axis) and compare with sex for each education level
+
+```{r}
+aggregated_data |>ggplot(aes(x=age,y=total,color=sex))+
+  geom_point(alpha = .5) +
+  #include smooth line
+  geom_smooth(se = FALSE) +
+  #seperate panels for each education level
+  facet_grid(. ~ education)+
+  #add title 
+  labs(title = "Total Activity by Different Age, Sex and Education Level",
+       x = "age ",
+       y = "total activity ") 
+```
+It is observed from the plot that for both male and female, the age gets older, the total activity time gets smaller. No matter which education level female and male groups have, it all shows the highest total activity before the age of 60, probably because people before that age maintain better health condition and energy. For the education level less than high school, male group tends to have more total activity, and the peak total activity falls between age 40 to 60 for both groups. And for the other two categories, female group tends to have more total activity. 
+
+* Make a three-panel plot that shows the 24-hour activity time courses for each education level and use color to indicate sex
+
+```{r}
+activity_data=cleaned_merged_data |> pivot_longer(cols = min1: min1440,
+                                                  names_to="minute",
+                                                  values_to = "activity"
+                                                  )
+```
+
+```{r}
+knitr::opts_chunk$set(
+  fig.width = 10,
+  fig.asp = .6,
+  out.width = "100%"
+)
+
+activity_data |> 
+  mutate(minute_num = as.numeric(sub("min", "", minute)),  # Extract numeric minute value
+          # Convert to hours (1 to 24)
+         hour = minute_num %/% 60 + 1) |> 
+  ggplot(aes(x = hour, y = activity, color = sex)) + 
+  geom_point(alpha = .5) + 
+  geom_smooth(se = FALSE) + 
+  facet_grid(. ~ education) + 
+  scale_x_continuous(
+    breaks = 1:24,  # Set breaks at each hour
+    labels = as.character(1:24)  # Label breaks as 1 through 24
+  ) +
+  labs(
+    title = "24-hour Activity Time Course by Education Level and Sex",
+    x = "Hour of Day",
+    y = "Activity Level"
+  )+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+Across all education levels, activity tends to peak in the morning (around 7am to 1 pm) and around 6 to 11 pm) for both groups. For the group with education level more than high school, male group shows greater variability, with more pronounced peaks in activity and more outliers, such as some individuals like to have high activity level at about 8 to 10 pm. Male and female group generally shows similar activities for all three education levels.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
