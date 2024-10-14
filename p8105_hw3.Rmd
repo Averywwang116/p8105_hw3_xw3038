@@ -166,6 +166,7 @@ cleaned_merged_data |> ggplot(aes(x=education,y=age,fill=sex))+geom_boxplot(alph
     color = "sex",
    )  +theme_minimal()
 ```
+
 From the table and the plot , it shows that for the category "less than high school" and "More than high school ", women and men shows about the similar count. And there are more males than females with education levels "equivalent to high school." 
 
 * Aggregate across minutes to create a total activity variable for each participant
@@ -232,7 +233,7 @@ activity_data |>
   )+theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
-Across all education levels, activity tends to peak in the morning (around 7am to 1 pm) and around 6 to 11 pm) for both groups. For the group with education level more than high school, male group shows greater variability, with more pronounced peaks in activity and more outliers, such as some individuals like to have high activity level at about 8 to 10 pm. Male and female group generally shows similar activities for all three education levels.
+Across all education levels, activity tends to peak in the morning (around 7am to 1 pm) and around 6 to 11 pm for both groups. For the group with education level more than high school, male group shows greater variability, with more pronounced peaks in activity and more outliers, such as some individuals like to have high activity level at about 8 to 10 pm. Male and female group generally shows similar activities for all three education levels.
 
 
 ## Problem 3
@@ -346,6 +347,7 @@ Filter out the date in 2024 first
 ```{r}
 analysis_2024= citi_data |> filter(year==2024) 
 ```
+
 
 ```{r}
  analysis_2024 |> 
