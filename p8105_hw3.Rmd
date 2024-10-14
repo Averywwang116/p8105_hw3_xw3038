@@ -8,13 +8,10 @@ output: github_document
 ## Problem 1
 Load the package and set up r
 ```{r}
-
-
-
 library(tidyverse)
 library(ggridges)
 library(p8105.datasets)
-
+library(patchwork)
 knitr::opts_chunk$set(
 	echo = TRUE,
 	warning = FALSE,
@@ -49,11 +46,11 @@ Then the year, month and day values are extracted using `lubridate`. And since t
 ```{r}
 cleaned_noaa= ny_noaa |> drop_na() |>
   #seperate year,month and date
-  mutate(year=lubridate::year(date),
-         month=lubridate::month(date),
-         day = lubridate::day(date),
+  mutate(year=lubridate::year(date), # extract year
+         month=lubridate::month(date), #extract month
+         day = lubridate::day(date),#extract day
          prcp = prcp / 10,
-         tmax=as.numeric(tmax),
+         tmax=as.numeric(tmax), #convert to numeric to be divided by 10
          tmin=as.numeric(tmin),
          tmax = tmax / 10,
          tmin = tmin / 10) |>
@@ -71,4 +68,53 @@ snow
 ```
 
 
-From the observation the most commonly observed value for snowfall is `r snow$snow[1]`. It probably because NY does not snow that often. And the other most commonly observed values are 25,13,51,5
+From the observation the most commonly observed value for snowfall is `r snow$snow[1]`. It probably because NY does not snow that often. And the other most commonly observed values are 25,13,51,5 are also reasonable because they are the moderate snowfalls that could occur during winter seasons, not too heavy but noticeable.
+
+* Make a two-panel plot showing the average max temperature in January and in July in each station across years.
+
+
+```{r}
+filtered_data = cleaned_noaa |>
+  # filter with month Jan and July
+  filter(month == 1 | month == 7) |>
+  mutate(month = as.character(month)) |>
+  #group by id, month and year
+  group_by(id, month, year) |>
+  # summarize with the average max temperature by group
+  summarize(avg_max = mean(tmax, na.rm = TRUE))
+```
+
+
+```{r}
+filtered_data |> ggplot(aes(x = year, y = avg_max,color = id)) +
+  #use scatterplot
+  geom_point(show.legend = F,alpha = .5) +
+  facet_grid(~month, labeller = as_labeller(c(`1` = "January", `7` = "July"))) +   
+  labs(
+    #give title
+    title = "Average Max Temperature in January and July by Station Across Years",
+    #show x and y axis 
+    x = "Year",
+    y = "Average Max Temperature (°C)"
+  ) 
+```
+
+The average max temperature is much higher in July than in January which is normal for the summer season and the winter season in NY. And it seems that the average max temperature falls in similar range for different years. There are some outliers in the plot such as the observation of extremely low temperature in January, 1982. And in the year 1987 and month July, it is also observed a cold station, with is much lower than the temperatures in the other stations
+
+* Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
+
+```{r}
+hex= cleaned_noaa|>ggplot(aes(x = tmax,y=tmin)) + geom_hex()
+
+ridge = 
+  cleaned_noaa |>
+  filter(snow < 100 & snow > 0) |>
+  ggplot(aes(x = snow, y = as.factor(year))) + 
+  geom_density_ridges()
+
+hex + ridge
+```
+
+From the hex plot it is seen that the majority of the data locates near the center of the plot, and in most cases tmax is larger than tmin, but in some cases tmin is bigger. And for the ridge plot, majority of the stations see between 0 and 35 mm of snow in a year, and some groups show the snowfall around 50 mm and 80 mm.
+
+## Problem 2
