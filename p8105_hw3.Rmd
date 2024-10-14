@@ -1,0 +1,74 @@
+---
+title: "Homework3"
+author: "Avery Wang"
+date: 2024-10-12
+output: github_document
+---
+
+## Problem 1
+Load the package and set up r
+```{r}
+
+
+
+library(tidyverse)
+library(ggridges)
+library(p8105.datasets)
+
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+	fig.width = 8,
+  fig.height = 6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+```
+
+Load dataset
+```{r}
+data("ny_noaa")
+```
+
+
+This dataset contains `r nrow(ny_noaa)` rows and `r ncol(ny_noaa)` columns. It includes variables id, date, prcp (precipitation), snow (snowfall), snwd (snow depth), tmax and tmin (the max and min of temperature). It is also observed that the missing data frequently appears in the dataset especially in column tmax and tmin, which are important columns. So the first step of the data cleaning is to drop the rows with the missing values.
+
+Then the year, month and day values are extracted using `lubridate`. And since the current prcp, tmax and tmax are tenths of mm and degrees C, these columns should be divided by 10. For tmax and tmin, the type should be converted to numeric first to do the calculation.
+
+
+```{r}
+cleaned_noaa= ny_noaa |> drop_na() |>
+  #seperate year,month and date
+  mutate(year=lubridate::year(date),
+         month=lubridate::month(date),
+         day = lubridate::day(date),
+         prcp = prcp / 10,
+         tmax=as.numeric(tmax),
+         tmin=as.numeric(tmin),
+         tmax = tmax / 10,
+         tmin = tmin / 10) |>
+  #reorder the dataset
+  select(id,date,year,month,day,everything())
+```
+
+
+* For snowfall, what are the most commonly observed values?
+```{r}
+snow=cleaned_noaa |> group_by(snow) |>
+  summarize(count=n()) |>
+  arrange(desc(count)) |> head(5)
+snow
+```
+
+
+From the observation the most commonly observed value for snowfall is `r snow$snow[1]`. It probably because NY does not snow that often. And the other most commonly observed values are 25,13,51,5
